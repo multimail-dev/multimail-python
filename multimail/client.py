@@ -135,6 +135,14 @@ class MultiMail:
         _raise_for_status(resp)
         return resp.content
 
+    def report_spam(self, email_id: str) -> dict:
+        """Quarantine an email as spam. Returns {id, status: 'spam_quarantined', user_label: 'spam'}."""
+        return self._request("POST", f"/v1/emails/{email_id}/report-spam")
+
+    def not_spam(self, email_id: str) -> dict:
+        """Clear a spam label, restoring the email to the inbox. Returns {id, status: 'unread', user_label: 'not_spam'}."""
+        return self._request("POST", f"/v1/emails/{email_id}/not-spam")
+
     # ── Tags ─────────────────────────────────────────────────
 
     def get_tags(self, mailbox_id: str, email_id: str) -> dict:
@@ -172,6 +180,17 @@ class MultiMail:
         if reason:
             body["reason"] = reason
         return self._request("POST", "/v1/oversight/decide", json=body)
+
+    def request_upgrade(self, mailbox_id: str, target_mode: str) -> dict:
+        """Request an oversight-mode change (the trust ladder). Sends an approval code to the
+        configured oversight email; the human shares it back to apply_upgrade(). target_mode is one
+        of: read_only, gated_all, gated_send, monitored, autonomous. Returns {status: 'upgrade_requested', ...}."""
+        return self._request("POST", f"/v1/mailboxes/{mailbox_id}/request-upgrade", json={"target_mode": target_mode})
+
+    def apply_upgrade(self, mailbox_id: str, code: str) -> dict:
+        """Apply a previously-requested oversight upgrade using the code the human shared back.
+        Returns {status: 'upgraded', ...}. There is no automatic grant — the code is required."""
+        return self._request("POST", f"/v1/mailboxes/{mailbox_id}/upgrade", json={"code": code})
 
     # ── API Keys ─────────────────────────────────────────────
 
@@ -335,6 +354,14 @@ class AsyncMultiMail:
         _raise_for_status(resp)
         return resp.content
 
+    async def report_spam(self, email_id: str) -> dict:
+        """Quarantine an email as spam. Returns {id, status: 'spam_quarantined', user_label: 'spam'}."""
+        return await self._request("POST", f"/v1/emails/{email_id}/report-spam")
+
+    async def not_spam(self, email_id: str) -> dict:
+        """Clear a spam label, restoring the email to the inbox. Returns {id, status: 'unread', user_label: 'not_spam'}."""
+        return await self._request("POST", f"/v1/emails/{email_id}/not-spam")
+
     # ── Tags ─────────────────────────────────────────────────
 
     async def get_tags(self, mailbox_id: str, email_id: str) -> dict:
@@ -372,6 +399,17 @@ class AsyncMultiMail:
         if reason:
             body["reason"] = reason
         return await self._request("POST", "/v1/oversight/decide", json=body)
+
+    async def request_upgrade(self, mailbox_id: str, target_mode: str) -> dict:
+        """Request an oversight-mode change (the trust ladder). Sends an approval code to the
+        configured oversight email; the human shares it back to apply_upgrade(). target_mode is one
+        of: read_only, gated_all, gated_send, monitored, autonomous. Returns {status: 'upgrade_requested', ...}."""
+        return await self._request("POST", f"/v1/mailboxes/{mailbox_id}/request-upgrade", json={"target_mode": target_mode})
+
+    async def apply_upgrade(self, mailbox_id: str, code: str) -> dict:
+        """Apply a previously-requested oversight upgrade using the code the human shared back.
+        Returns {status: 'upgraded', ...}. There is no automatic grant — the code is required."""
+        return await self._request("POST", f"/v1/mailboxes/{mailbox_id}/upgrade", json={"code": code})
 
     # ── API Keys ─────────────────────────────────────────────
 
